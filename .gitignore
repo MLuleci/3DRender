@@ -1,0 +1,4 @@
+.buildconfig
+*.out
+*.stl
+obj/
