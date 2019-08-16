@@ -64,20 +64,20 @@ void Solid::readFile(std::string f)
 		return;
 	}
 
-	std::ifstream is (f, std::ifstream::in | std::ifstream::binary);
+	std::ifstream is (f, std::ifstream::binary);
 	if (!is) {
 		std::cerr << "Couldn't open " << std::quoted(f) << std::endl;
 		return;
 	}
 
 	// Skip file header
-	is.seekg(sizeof(uint8_t) * 80, is.beg);
+	is.seekg(80, is.beg);
 
 	// Get machine endianness
 	bool le = endian();
 
 	// Read number of triangles
-	is.read((char *) &m_max, sizeof(uint32_t));
+	is.read((char *) &m_max, 4);
 	if (!le) swapEndian<uint32_t>(&m_max);
 
 	// Re-initialize variables
@@ -86,38 +86,44 @@ void Solid::readFile(std::string f)
 	m_arr = new Triangle[m_max];
 
 	// Read all triangles
-	while(is.good()) {
+	bool warn = false;
+	while(is.good() && m_len < m_max) {
 		Vector3 v[4]; // In order: norm, v0, v1, v2
 		for (int i = 0; i < 4; ++i) { // 4 vectors per triangle
-			for (int j = 0; j < 3; ++j) { // 3 floats per vector
-				float x, y, z;
-				is.read((char *) &x, sizeof(float));
-				is.read((char *) &y, sizeof(float));
-				is.read((char *) &z, sizeof(float));
+			float x, y, z; // 3 floats per vector
 
-				// Do endianness swaps if necessary
-				if (!le) {
-					swapEndian<float>(&x);
-					swapEndian<float>(&y);
-					swapEndian<float>(&z);
-				}
+			char buf[12];
+			is.read(buf, 12);
 
-				v[i] = Vector3(x, y, z);
+			x = *((float *) buf);
+			y = *((float *) buf + 4);
+			z = *((float *) buf + 8);
+
+			// Do endianness swaps if necessary
+			if (!le) {
+				swapEndian<float>(&x);
+				swapEndian<float>(&y);
+				swapEndian<float>(&z);
 			}
+
+			v[i] = Vector3(x, y, z);
 		}
 
 		// Check if normal vector and m_max are valid
 		Triangle t(v[1], v[2], v[3], v[0]);
-		if (!t.valid() || !append(t)) {
-			std::cerr << "File is corrupt" << std::endl;
+		if (!t.valid()) warn = true;
+		if (!append(t)) {
+			std::cerr << "Internal failure" << std::endl;
 			return;
 		}
 
 		// Skip attribute bytes
-		is.seekg(sizeof(uint16_t), is.cur);
+		is.seekg(2, is.cur);
 	}
 
-	std::cout << "File read " << (is.eof() ? "OK" : "ERROR") << std::endl;
+	if (warn) std::cerr << "Warning: File may be corrupt" << std::endl;
+	std::cout << "File read " << (is.good() ? "OK" : "ERROR") << std::endl;
+	is.close();
 }
 
 uint32_t Solid::length() const
@@ -127,7 +133,7 @@ uint32_t Solid::length() const
 
 bool Solid::append(const Triangle& t)
 {
-	if (m_len < m_max && m_max > 0) {
+	if (m_len < m_max && m_arr) {
 		m_arr[m_len++] = t;
 		return true;
 	}
