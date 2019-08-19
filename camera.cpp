@@ -1,4 +1,7 @@
 #include <cmath>
+#include <GL/freeglut.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 #include "camera.hpp"
 #define PI 3.1415926535
 
@@ -82,4 +85,15 @@ void Camera::setRoll(double r)
 
 	// Set m_pW to the cross product of m_dir and m_pH
 	m_pW = m_pH.cross(-m_dir);
+}
+
+void Camera::render(const Solid& s) const
+{
+	// Clear color buffer
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	// TODO: Render solid
+
+	// Update screen buffer
+	glutSwapBuffers();
 }

@@ -56,18 +56,18 @@ Solid& Solid::operator=(Solid&& o) noexcept
 	return *this;
 }
 
-void Solid::readFile(std::string f)
+bool Solid::readFile(std::string f)
 {
 	std::string ext = f.substr(f.find_last_of('.') + 1);
 	if (ext.compare("stl") && ext.compare("STL")) {
 		std::cerr << "Invalid file type " << std::quoted(ext) << std::endl;
-		return;
+		return false;
 	}
 
 	std::ifstream is (f, std::ifstream::binary);
 	if (!is) {
 		std::cerr << "Couldn't open " << std::quoted(f) << std::endl;
-		return;
+		return false;
 	}
 
 	// Skip file header
@@ -85,6 +85,11 @@ void Solid::readFile(std::string f)
 	delete[] m_arr;
 	m_arr = new Triangle[m_max];
 
+	if (m_arr == nullptr) {
+		std::cerr << "Not enough memory" << std::endl;
+		return false;
+	}
+
 	// Read all triangles
 	bool warn = false;
 	while(is.good() && m_len < m_max) {
@@ -94,6 +99,11 @@ void Solid::readFile(std::string f)
 
 			char buf[12];
 			is.read(buf, 12);
+
+			if (is.gcount() != 12) {
+				std::cerr << "Read error" << std::endl;
+				return false;
+			}
 
 			x = *((float *) buf);
 			y = *((float *) buf + 4);
@@ -114,7 +124,7 @@ void Solid::readFile(std::string f)
 		if (!t.valid()) warn = true;
 		if (!append(t)) {
 			std::cerr << "Internal failure" << std::endl;
-			return;
+			return false;
 		}
 
 		// Skip attribute bytes
@@ -122,8 +132,9 @@ void Solid::readFile(std::string f)
 	}
 
 	if (warn) std::cerr << "Warning: File may be corrupt" << std::endl;
-	std::cout << "File read " << (is.good() ? "OK" : "ERROR") << std::endl;
+	std::cout << "File read OK" << std::endl;
 	is.close();
+	return true;
 }
 
 uint32_t Solid::length() const

@@ -16,8 +16,9 @@ public:
 
 	/** Construct a new solid from a given `.stl` file
 	 * @param Filename
+	 * @return True on success, false otherwise
 	*/
-	void readFile(std::string);
+	bool readFile(std::string);
 
 	/** Get the number of triangles that make up the solid.
 	 * @return Triangle count

@@ -1,5 +1,6 @@
 #ifndef CAMERA_HPP
 #define CAMERA_HPP
+#include "solid.hpp"
 #include "vector3.hpp"
 
 class Camera {
@@ -57,6 +58,11 @@ public:
 	 * @param r Roll angle in radians
 	*/
 	void setRoll(double);
+
+	/** Render the current scene the camera sees.
+	 * @param s The solid to be rendered
+	*/
+	void render(const Solid&) const;
 
 private:
 	Vector3 m_pos;
