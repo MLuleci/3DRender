@@ -5,7 +5,7 @@ class Vector3 {
 public:
 	// Constructors
 	Vector3();
-	Vector3(float, float, float);
+	Vector3(double, double, double);
 
 	// Operators
 	Vector3& operator+=(const Vector3&);
@@ -13,43 +13,44 @@ public:
 
 	Vector3& operator-=(const Vector3&);
 	Vector3 operator-(const Vector3&) const;
+	Vector3 operator-() const;
 
 	Vector3& operator*=(const Vector3&);
-	Vector3 operator*(float) const;
+	Vector3 operator*(double) const;
 
-	Vector3& operator/=(float);
-	Vector3 operator/(float) const;
+	Vector3& operator/=(double);
+	Vector3 operator/(double) const;
 
 	bool operator==(const Vector3&);
 	bool operator!=(const Vector3&);
 
 
-	/** Calculate the cross product of two vectors.
-	 * @param a The first vector.
-	 * @param b The second vector.
-	 * @return Their cross product.
+	/** Calculate the cross product of two Vector3s.
+	 * @param a First vector
+	 * @param b Second vector
+	 * @return Cross product
 	*/
 	Vector3 cross(const Vector3&) const;
 
-	/** Calculate the dot product of two vectors.
-	 * @param a The first vector.
-	 * @param b The second vector.
-	 * @return Their dot product.
+	/** Calculate the dot product of two Vector3s.
+	 * @param a First vector
+	 * @param b Second vector
+	 * @return Dot product
 	*/
-	float dot(const Vector3&) const;
+	double dot(const Vector3&) const;
 
-	/** Calculate the normalized version of the vector.
-	 * @return The normalized version.
+	/** Calculate the normalized version of the Vector3.
+	 * @return Normalize (unit) vector
 	*/
 	Vector3 norm() const;
 
-	/** Calculate the magnitude of the vector.
+	/** Calculate the magnitude of the Vector3.
 	 * @return Magnitude = |v|
 	*/
-	float mag() const;
+	double mag() const;
 
 	// Instance variables
-	float x, y, z;
+	double x, y, z;
 };
 
 #endif

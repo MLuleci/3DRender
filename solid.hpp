@@ -20,14 +20,14 @@ public:
 	void readFile(std::string);
 
 	/** Get the number of triangles that make up the solid.
-	 * @return Triangle count.
+	 * @return Triangle count
 	*/
 	uint32_t length() const;
 
 private:
 	/** Append a triangle to the solid
-	 * @param The triangle to append.
-	 * @bool True on success, false otherwise.
+	 * @param Triangle to append
+	 * @bool True on success, false otherwise
 	*/
 	bool append(const Triangle&);
 
@@ -37,7 +37,7 @@ private:
 	bool endian() const;
 
 	/** Swap memory endianess.
-	 * @param p Pointer to the memory to be swapped.
+	 * @param p Pointer to the memory to be swapped
 	*/
 	template<typename T>
 	void swapEndian(T *) const;

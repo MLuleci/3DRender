@@ -25,7 +25,8 @@ void Triangle::setVertex(size_t i, Vector3 v)
 
 bool Triangle::valid() const
 {
-	Vector3 calc = m_vertex[1] - m_vertex[0];
-	calc = calc.cross(m_vertex[2] - m_vertex[0]).norm();
-	return calc == m_norm;
+	Vector3 a = m_vertex[1] - m_vertex[0];
+	Vector3 b = m_vertex[2] - m_vertex[0];
+	Vector3 n = a.cross(b).norm();
+	return n == m_norm;
 }
