@@ -4,6 +4,7 @@
 #include <cstring>
 #include <utility>
 #include <cstdio>
+#include <cmath>
 #include "solid.hpp"
 
 // Default constructor
@@ -11,12 +12,20 @@ Solid::Solid()
 : m_arr(nullptr)
 , m_max(0)
 , m_len(0)
+, m_light(true)
+, m_upper()
+, m_lower()
+, m_index(0)
+, m_vertex(nullptr)
+, m_norm(nullptr)
 {}
 
 // Destructor
 Solid::~Solid()
 {
 	delete[] m_arr;
+	delete[] m_vertex;
+	delete[] m_norm;
 }
 
 // Copy constructor
@@ -24,9 +33,22 @@ Solid::Solid(const Solid& o)
 {
 	m_max = o.m_max;
 	m_len = o.m_len;
+	m_light = o.m_light;
+	m_index = o.m_index;
+
 	if (o.m_arr) {
 		m_arr = new Triangle[m_max];
-		memcpy(m_arr, o.m_arr, m_max);
+		memcpy(m_arr, o.m_arr, sizeof(Triangle) * m_max);
+	}
+
+	if (o.m_vertex) {
+		m_vertex = new GLfloat[m_max * 9];
+		memcpy(m_vertex, o.m_vertex, sizeof(GLfloat) * m_max * 9);
+	}
+
+	if (o.m_norm) {
+		m_norm = new GLfloat[m_max * 3];
+		memcpy(m_norm, o.m_norm, sizeof(GLfloat) * m_max * 3);
 	}
 }
 
@@ -35,10 +57,18 @@ Solid::Solid(Solid&& o) noexcept
 : m_arr(std::move(o.m_arr))
 , m_max(o.m_max)
 , m_len(o.m_len)
+, m_light(o.m_light)
+, m_index(o.m_index)
+, m_vertex(std::move(o.m_vertex))
+, m_norm(std::move(o.m_norm))
 {
 	o.m_arr = nullptr;
 	o.m_max = 0;
 	o.m_len = 0;
+	o.m_light = false;
+	o.m_index = 0;
+	o.m_vertex = nullptr;
+	o.m_norm = nullptr;
 }
 
 // Copy assignment
@@ -53,6 +83,10 @@ Solid& Solid::operator=(Solid&& o) noexcept
 	m_arr = std::exchange(o.m_arr, nullptr);
 	m_max = std::exchange(o.m_max, 0);
 	m_len = std::exchange(o.m_len, 0);
+	m_light = std::exchange(o.m_light, false);
+	m_index = std::exchange(o.m_index, 0);
+	m_vertex = std::exchange(o.m_vertex, nullptr);
+	m_norm = std::exchange(o.m_norm, nullptr);
 	return *this;
 }
 
@@ -117,6 +151,14 @@ bool Solid::readFile(std::string f)
 			}
 
 			v[i] = Vector3(x, y, z);
+
+			m_upper.x = (m_upper.x < x ? x : m_upper.x);
+			m_upper.y = (m_upper.y < y ? y : m_upper.y);
+			m_upper.z = (m_upper.z < z ? z : m_upper.z);
+
+			m_lower.x = (m_lower.x > x ? x : m_lower.x);
+			m_lower.y = (m_lower.y > y ? y : m_lower.y);
+			m_lower.z = (m_lower.z > z ? z : m_lower.z);
 		}
 
 		// Check if normal vector and m_max are valid
@@ -134,12 +176,33 @@ bool Solid::readFile(std::string f)
 	if (warn) std::cerr << "Warning: File may be corrupt" << std::endl;
 	std::cout << "File read OK" << std::endl;
 	is.close();
+
+	genDisplayList();
 	return true;
 }
 
-uint32_t Solid::length() const
+void Solid::toggleLight()
 {
-	return m_len;
+	m_light = !m_light;
+	genDisplayList();
+}
+
+const GLuint Solid::getList() const
+{
+	return m_index;
+}
+
+double Solid::getRadius() const
+{
+	double x = std::pow(m_upper.x - m_lower.x, 2);
+	double y = std::pow(m_upper.y - m_lower.y, 2);
+	double z = std::pow(m_upper.z - m_lower.z, 2);
+	return std::sqrt(x + y + z) / 2.0;
+}
+
+Vector3 Solid::getCenter() const
+{
+	return m_upper - m_lower;
 }
 
 bool Solid::append(const Triangle& t)
@@ -168,4 +231,58 @@ void Solid::swapEndian(T *p) const
 		bp[sizeof(T) - i - 1] = b;
 	}
 	memcpy(p, &temp, sizeof(T));
+}
+
+void Solid::genDisplayList()
+{
+	// Clear arrays
+	delete[] m_vertex;
+	delete[] m_norm;
+
+	// Don't create new arrays if no triangles in solid
+	if (m_max <= 0) {
+		glDeleteLists(m_index, 1);
+		m_index = 0;
+		return;
+	}
+
+	// Construct new vertex array
+	m_vertex = new GLfloat[m_max * 9];
+	for (uint32_t i = 0; i < m_max; ++i) { // Each triangle
+		Triangle &t = m_arr[i];
+		for (uint32_t j = 0; j < 3; ++j) { // Each vertex
+			Vector3 v = t.getVertex(j);
+			uint32_t p = i * 9 + j * 3;
+			m_vertex[p] = v.x;
+			m_vertex[p + 1] = v.y;
+			m_vertex[p + 2] = v.z;
+		}
+	}
+	glVertexPointer(3, GL_FLOAT, 0, m_vertex);
+
+	// Construct new normal array
+	if (m_light) {
+		glEnableClientState(GL_NORMAL_ARRAY);
+		m_norm = new GLfloat[m_max * 3];
+		for (uint32_t i = 0; i < m_max; ++i) { // Each triangle
+			Vector3 v = m_arr[i].getNormal();
+			uint32_t p = i * 3;
+			m_norm[p] = v.x;
+			m_norm[p + 1] = v.y;
+			m_norm[p + 2] = v.z;
+		}
+		glNormalPointer(GL_FLOAT, 0, m_norm);
+	} else {
+		glDisableClientState(GL_NORMAL_ARRAY);
+	}
+
+	// Delete old list if exists
+	glDeleteLists(m_index, 1);
+
+	// Create new list
+	m_index = glGenLists(1);
+	glNewList(m_index, GL_COMPILE);
+		glColor3f(1.f, 1.f, 1.f); // TODO: Default color is white, add option to change
+		glDrawArrays(GL_TRIANGLES, 0, m_max);
+	glEndList();
 }

@@ -21,7 +21,12 @@ public:
 	*/
 	void setVertex(size_t, Vector3);
 
-	/** Test if the calculated normal matches the given normal
+	/** Get the normal that was read from the file regardless of its validity.
+	 * @return The non-calculated normal
+	*/
+	Vector3 getNormal() const;
+
+	/** Test if the calculated normal matches the given normal.
 	 * @return True if the two normals are equal, false otherwise
 	*/
 	bool valid() const;

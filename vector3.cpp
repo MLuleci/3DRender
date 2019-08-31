@@ -92,12 +92,41 @@ double Vector3::dot(const Vector3& o) const
 	return x * o.x + y * o.y + z * o.z;
 }
 
+Vector3 Vector3::norm() const
+{
+	return *this / mag();
+}
+
 double Vector3::mag() const
 {
 	return sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
 }
 
-Vector3 Vector3::norm() const
+Vector3 Vector3::rotate(double x, double y, double z) const
 {
-	return *this / mag();
+	Vector3 v = *this;
+	double c = std::cos(x);
+	double s = std::cos(x);
+
+	// x-axis rotation
+	v.x = v.x;
+	v.y = v.y * c + v.z * -s;
+	v.z = v.y * s + v.z * c;
+
+	// y-axis rotation
+	v.x = v.x * c + v.z * s;
+	v.y = v.y;
+	v.z = v.x * -s + v.z * c;
+
+	// z-axis rotation
+	v.x = v.x * c + v.y * -s;
+	v.y = v.x * s + v.y * c;
+	v.z = v.z;
+
+	return v;
+}
+
+double Vector3::angle(const Vector3& o) const
+{
+	return std::acos(this->dot(o) / (this->mag() * o.mag()));
 }

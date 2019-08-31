@@ -1,24 +1,26 @@
 #include <cmath>
+#include <GL/glew.h>
 #include <GL/freeglut.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
 #include "camera.hpp"
 #define PI 3.1415926535
 
-/* Position starts at point P(0, 0, 0)
- * Direction starts pointing towards the X-axis D(1, 0, 0)
- * Plane width & height have D as their cross product W(0, 1, 0) & H(0, 0, 1)
- * Initial screen dimensions must be given
- * Focal length is such that the angle of view is 45*, f = w / (2 * tan(PI / 8))
+/**
+ * Position at origin
+ * Direction points at negative z-axis
+ * Up vector points at positive y-axis
+ * FoV & ratio are 0, need to be initialized
+ * Far & near clips are 1 & 0, need to be initialized
+ * Initial projection is perspective
 */
-Camera::Camera(unsigned int w, unsigned int h)
+Camera::Camera()
 : m_pos()
-, m_dir(1, 0, 0)
-, m_pW(0, 1, 0)
-, m_pH(0, 0, 1)
-, m_width(w)
-, m_height(h)
-, m_flen((double) w / (2.0 * std::tan(PI / 8)))
+, m_dir(0, 0, -1)
+, m_up(0, 1, 0)
+, m_fov(0)
+, m_ratio(0)
+, m_far(1)
+, m_near(0)
+, m_persp(true)
 {}
 
 void Camera::setPos(Vector3 p)
@@ -31,69 +33,93 @@ Vector3 Camera::getPos() const
 	return m_pos;
 }
 
-void Camera::setDir(Vector3 d)
+void Camera::setYaw(double a)
 {
-	// Get rotation around Z-axis & use it to rotate m_pW
-	double r = std::atan2(d.y, d.x) - std::atan2(m_dir.y, m_dir.x);
-	m_pW = Vector3(m_pW.x * std::cos(r) - m_pW.y * std::sin(r), m_pW.x * std::sin(r) + m_pW.y * std::cos(r), m_pW.z);
-
-	// Set new position
-	m_dir = d;
-
-	// Set m_pH to the cross product of m_dir and m_pW
-	m_pH = -m_dir.cross(m_pW).norm();
+	m_dir = m_dir.rotate(0, a, 0);
 }
 
-void Camera::setDir(double yaw, double pit)
+double Camera::getYaw() const
 {
-	double x = std::cos(yaw);
-	double y = std::sin(yaw);
-	double z = std::sin(pit);
-	setDir(Vector3(x, y, z));
+	return std::asin(m_dir.x / std::sqrt(std::pow(m_dir.x, 2) + std::pow(m_dir.z, 2)));
 }
 
-Vector3 Camera::getDir() const
+void Camera::setPitch(double a)
 {
-	return m_dir;
+	m_dir = m_dir.rotate(a, 0, 0);
 }
 
-void Camera::setAspectRatio(unsigned int w, unsigned int h)
+double Camera::getPitch() const
 {
-	m_width = w;
-	m_height = h;
+	Vector3 y(0, 1, 0);
+	return (PI / 2.0) - m_dir.angle(y);
 }
 
-double Camera::getAspectRatio() const
+void Camera::setRoll(double a)
 {
-	return (m_height ? m_width / m_height : 0);
+	double c = std::cos(a);
+	double s = std::sin(a);
+	m_up = m_up * c + (m_dir.cross(m_up)) * s + m_dir * (m_dir.dot(m_up)) * (1.0 - c);
 }
 
-void Camera::setFocalLen(double f)
+double Camera::getRoll() const
 {
-	m_flen = (f <= 0 ? 0 : f);
+	Vector3 y(0, 1, 0);
+	return m_up.angle(y);
 }
 
-double Camera::getFocalLen() const
+void Camera::setFov(double a)
 {
-	return m_flen;
+	if (0.0 <= a && a <= 180.0)
+		m_fov = a;
 }
 
-void Camera::setRoll(double r)
+double Camera::getFov() const
 {
-	// Rotate m_pH around m_dir (using Rodrigues' rotation formula)
-	m_pH = m_pH * std::cos(r) + (-m_dir.cross(m_pH)) * std::sin(r) + -m_dir * (-m_dir.dot(m_pH)) * (1 - std::cos(r));
+	return m_fov;
+}
 
-	// Set m_pW to the cross product of m_dir and m_pH
-	m_pW = m_pH.cross(-m_dir);
+void Camera::setRatio(double r)
+{
+	m_ratio = r;
+}
+
+double Camera::getRatio() const
+{
+	return m_ratio;
+}
+
+void Camera::toggleProj()
+{
+	m_persp = !m_persp;
+}
+
+void Camera::setFarClip(double f)
+{
+	setClipping(f, m_near);
+}
+
+void Camera::setNearClip(double n)
+{
+	setClipping(m_far, n);
+}
+
+void Camera::setClipping(double f, double n)
+{
+	m_far = (f >= 0 ? f : m_far);
+	m_near = (n >= 0 ? n : m_near);
+}
+
+double Camera::getFarClip() const
+{
+	return m_far;
+}
+
+double Camera::getNearClip() const
+{
+	return m_near;
 }
 
 void Camera::render(const Solid& s) const
 {
-	// Clear color buffer
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	// TODO: Render solid
-
-	// Update screen buffer
-	glutSwapBuffers();
+	glCallList(s.getList());
 }

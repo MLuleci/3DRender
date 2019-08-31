@@ -1,63 +1,112 @@
 #include <cstdio>
+#include <GL/glew.h>
 #include <GL/freeglut.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
+#include <cmath>
 #include "solid.hpp"
 #include "camera.hpp"
+#include "util.hpp"
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 576
-#define SCREEN_FPS 60
+
+#define PI 3.1415926535
 
 // Create global camera & solid
-Camera gCamera(SCREEN_WIDTH, SCREEN_HEIGHT);
+Camera gCamera;
 Solid gSolid;
 
-void render()
+void display()
 {
+	// Clear buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Render solid
 	gCamera.render(gSolid);
+
+	// Update screen buffer
+	glutSwapBuffers();
+
+	// Re-draw TUI
+	clearscreen();
+	std::cout << 	"Click & drag to pan camera\n" <<
+					"Arrow keys to move camera\n"
+					"Roll [L]eft or [R]ight\n" <<
+					"Zoom in or out [+/-]\n" <<
+					"[T]oggle lighting\n" <<
+					"Toggle perspective or orthographic [P]rojection\n" <<
+					"[I]ncrease or [D]ecrease field of view\n";
 }
 
-void loop(int v)
+void reshape(int w, int h)
 {
-	// TODO: Get user input
-	render();
-	glutTimerFunc(1000 / SCREEN_FPS, loop, v);
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+	glOrtho(0, w, 0, h, -1.f, 1.f);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+}
+
+void init()
+{
+	// Enable array(s)
+	glEnableClientState(GL_VERTEX_ARRAY);
+
+	// Enable attribute(s)
+	glEnable(GL_DEPTH_TEST);
+
+	glClearColor(0.f, 0.f, 0.f, 0.f);
+	// glClearDepth is set to default, i.e. farthest from the camera
+	glShadeModel(GL_FLAT);
 }
 
 int main(int argc, char **argv)
 {
 	// Initialize GLUT
 	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	glutCreateWindow(argv[0]);
 
-	if (argc != 2) {
+	// Set callback(s)
+	glutDisplayFunc(display);
+	glutReshapeFunc(reshape);
+	/* TODO
+	glutKeyboardFunc();
+	glutMouseFunc();
+	glutMotionFunc();
+	*/
+
+	// Initialize GLEW
+	GLenum err = glewInit();
+	if (err != GLEW_OK) {
+		fprintf(stderr, "Error initializing OpenGL: %s\n", gluErrorString(err));
+		return 1;
+	}
+
+	// Initialize OpenGL
+	init();
+
+	// Check args
+	if (argc < 2) {
 		fprintf(stderr, "Usage: %s <filename>\nFile must be in `.stl` format.\n", argv[0]);
 		return 1;
 	}
 
-	// Read given STL file
+	// Read STL file
 	if (!gSolid.readFile(argv[1])) return 1;
 
-	// Initialize GLUT cont.
-	glutInitContextVersion(	2, 1); // Create OpenGL 2.1 context
-	glutInitDisplayMode(GLUT_DOUBLE); // Create double buffered window
-    glutInitWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-    glutCreateWindow("3DRender");
+	// Initialize camera
+	gCamera.setRatio(SCREEN_WIDTH / SCREEN_HEIGHT);
+	double r = gSolid.getRadius(); // Radius of sphere bounding solid
+	double d = (gCamera.getPos() - gSolid.getCenter()).mag(); // Distance to solid's center
+	double f = 2.0 * atan2(r, d);
+	gCamera.setFov(180.0 * f / PI);
+	gCamera.setClipping(d + r, d - r);
 
-    // Initialize OpenGL
-	glMatrixMode(GL_PROJECTION); // Projection matrix = identity
-	glLoadIdentity();
-	glMatrixMode(GL_MODELVIEW); // Model matrix = identity
-    glLoadIdentity();
-	glClearColor(0.f, 0.f, 0.f, 1.f);
+	std::cout << "Press ENTER to continue..." << std::endl;
+	pause();
 
-	GLenum err = glGetError();
-    if(err != GL_NO_ERROR) {
-        fprintf(stderr, "Error initializing OpenGL: %s\n", gluErrorString(err));
-        return 1;
-    }
-
-	// Set callbacks & run
-	glutDisplayFunc(render);
-	glutTimerFunc(1000 / SCREEN_FPS, loop, 0);
-    glutMainLoop();
+	// Enter GLUT main loop
+	glutMainLoop();
+	return 0;
 }

@@ -5,7 +5,7 @@
 
 class Camera {
 public:
-	Camera(unsigned int, unsigned int);
+	Camera();
 
 	/** Change the camera's position.
 	 * @param p New position
@@ -17,47 +17,85 @@ public:
 	*/
 	Vector3 getPos() const;
 
-	/** Change the camera's direction.
-	 * @param d Direction unit vector
+	/** Set camera yaw.
+	 * @param a New angle, in radians
 	*/
-	void setDir(Vector3);
+	void setYaw(double);
 
-	/** Change the camera's angle(s).
-	 * @param yaw Yaw angle in radians
-	 * @param pit Pitch angle in radians
+	/** Get camera yaw.
+	 * @return The angle m_dir makes with the z-axis
 	*/
-	void setDir(double, double);
+	double getYaw() const;
 
-	/** Get the camera's direction.
-	 * @return Direction unit vector
+	/** Set camera pitch.
+	 * @param a New angle, in radians
 	*/
-	Vector3 getDir() const;
+	void setPitch(double);
 
-	/** Set the camera plane's aspect ratio.
-	 * @param w Width
-	 * @param h Height
+	/** Get camera pitch.
+	 * @return The angle m_dir makes with the xz-plane
 	*/
-	void setAspectRatio(unsigned int, unsigned int);
-
-	/** Get the camera plane's aspect ratio.
-	 * @return Ratio = width / height
-	*/
-	double getAspectRatio() const;
-
-	/** Set the camera's focal length.
-	 * @param f New length
-	*/
-	void setFocalLen(double);
-
-	/** Get the focal length.
-	 * @return Distance between camera plane and camera
-	*/
-	double getFocalLen() const;
+	double getPitch() const;
 
 	/** Set camera roll.
-	 * @param r Roll angle in radians
+	 * @param a New angle, in radians
 	*/
 	void setRoll(double);
+
+	/** Get camera roll.
+	 * @return The angle m_up makes with the y-axis
+	*/
+	double getRoll() const;
+
+	/** Set camera field of view.
+	 * @param a New angle in range [0, 180]
+	*/
+	void setFov(double);
+
+	/** Get camera field of view.
+	 * @return FoV, in degrees
+	*/
+	double getFov() const;
+
+	/** Set aspect ratio.
+	 * @param r Screen width / height
+	*/
+	void setRatio(double);
+
+	/** Get aspect ratio.
+	 * @return The current aspect ratio
+	*/
+	double getRatio() const;
+
+	/** Toggle between orthographic and perspective projections.
+	*/
+	void toggleProj();
+
+	/** Set far clipping plane.
+	 * @param f Far clipping plane
+	*/
+	void setFarClip(double);
+
+	/** Set near clipping plane.
+	 * param n Near clipping plane
+	*/
+	void setNearClip(double);
+
+	/** Set projection depth clipping planes.
+	 * @param f Far clipping plane
+	 * @param n Near clipping plane
+	*/
+	void setClipping(double, double);
+
+	/** Get far clipping plane.
+	 * @return Far clip plane value
+	*/
+	double getFarClip() const;
+
+	/** Get near clipping plane.
+	 * @return Near clip plane value
+	*/
+	double getNearClip() const;
 
 	/** Render the current scene the camera sees.
 	 * @param s The solid to be rendered
@@ -65,11 +103,14 @@ public:
 	void render(const Solid&) const;
 
 private:
-	Vector3 m_pos;
-	Vector3 m_dir;
-	Vector3 m_pW, m_pH; // Camera plane
-	unsigned int m_width, m_height; // Screen dimensions (used w/ camera plane)
-	double m_flen; // Focal length
+	Vector3 m_pos;		// Camera position
+	Vector3 m_dir; 		// Direction the camera is facing
+	Vector3 m_up; 		// Vector pointing "up"
+	double m_fov; 		// Field of view
+	double m_ratio; 	// Aspect ratio
+	double m_far;		// Far clipping plane
+	double m_near;		// Near clipping plane
+	bool m_persp;		// Projection type toggle
 };
 
 #endif

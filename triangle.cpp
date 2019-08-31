@@ -23,6 +23,11 @@ void Triangle::setVertex(size_t i, Vector3 v)
 	if (0 <= i && i < 3) m_vertex[i] = v;
 }
 
+Vector3 Triangle::getNormal() const
+{
+	return m_norm;
+}
+
 bool Triangle::valid() const
 {
 	Vector3 a = m_vertex[1] - m_vertex[0];

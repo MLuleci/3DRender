@@ -1,7 +1,7 @@
 # 3DRender
-A program that can read and display 3D models stored in `.stl` files.
+A program that can view 3D `.stl` models.
 
 ## Dependencies
-- OpenGL (ver. 2.1+)
-- freeGLUT
-- GLU
+- OpenGL & GLU (ver. 2.1+)
+- freeGLUT (ver. 3.0+)
+- GLEW (ver. 2.1+)
