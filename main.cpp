@@ -1,10 +1,18 @@
 #include <cstdio>
+#include <iostream>
+#include <limits>
+#include <cmath>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-#include <cmath>
 #include "solid.hpp"
 #include "camera.hpp"
-#include "util.hpp"
+
+#if defined(_WIN32)
+	#define clear() system("cls")
+#else
+	#define clear() system("clear")
+#endif
+#define pause() std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n')
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 576
 
@@ -26,14 +34,16 @@ void display()
 	glutSwapBuffers();
 
 	// Re-draw TUI
-	clearscreen();
-	std::cout << 	"Click & drag to pan camera\n" <<
-					"Arrow keys to move camera\n"
-					"Roll [L]eft or [R]ight\n" <<
-					"Zoom in or out [+/-]\n" <<
-					"[T]oggle lighting\n" <<
-					"Toggle perspective or orthographic [P]rojection\n" <<
-					"[I]ncrease or [D]ecrease field of view\n";
+	clear();
+	printf(
+		"Click & drag to pan camera\n" \
+		"Arrow keys to move camera\n" \
+		"Roll [L]eft or [R]ight\n" \
+		"Zoom in or out [+/-]\n" \
+		"[T]oggle lighting\n" \
+		"Toggle perspective or orthographic [P]rojection\n" \
+		"[I]ncrease or [D]ecrease field of view\n"
+	);
 }
 
 void reshape(int w, int h)

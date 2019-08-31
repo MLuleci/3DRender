@@ -7,13 +7,13 @@
 
 class Solid {
 public:
-	Solid(); 							// Default constructor
-	~Solid(); 							// Destructor
-	Solid(const Solid&); 				// Copy constructor
-	Solid(Solid&&) noexcept; 			// Move constructor
+	Solid();							// Default constructor
+	~Solid();							// Destructor
+	Solid(const Solid&);				// Copy constructor
+	Solid(Solid&&) noexcept;			// Move constructor
 
-	Solid& operator=(const Solid&); 	// Copy assignment
-	Solid& operator=(Solid&&) noexcept; // Move assignment
+	Solid& operator=(const Solid&);		// Copy assignment
+	Solid& operator=(Solid&&) noexcept;	// Move assignment
 
 	/** Construct a new solid from a given `.stl` file.
 	 * @param Filename
