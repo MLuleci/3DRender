@@ -1,5 +1,6 @@
 #include <cmath>
 #include <GL/glew.h>
+#include <GL/glu.h>
 #include <GL/freeglut.h>
 #include "camera.hpp"
 #define PI 3.1415926535
@@ -69,8 +70,10 @@ double Camera::getRoll() const
 
 void Camera::setFov(double a)
 {
-	if (0.0 <= a && a <= 180.0)
+	if (0.0 <= a && a <= 180.0) {
 		m_fov = a;
+		setupProj();
+	}
 }
 
 double Camera::getFov() const
@@ -81,6 +84,7 @@ double Camera::getFov() const
 void Camera::setRatio(double r)
 {
 	m_ratio = r;
+	setupProj();
 }
 
 double Camera::getRatio() const
@@ -91,6 +95,19 @@ double Camera::getRatio() const
 void Camera::toggleProj()
 {
 	m_persp = !m_persp;
+}
+
+void Camera::setupProj() const
+{
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	if (m_persp) {
+		gluPerspective(m_fov, m_ratio, m_near, m_far);
+	} else {
+		double h = 2.0 * m_near * std::tan(m_fov / 2.0);
+		double w = m_ratio * h;
+		glOrtho(0, w, 0, h, m_near, m_far);
+	}
 }
 
 void Camera::setFarClip(double f)
@@ -107,6 +124,7 @@ void Camera::setClipping(double f, double n)
 {
 	m_far = (f >= 0 ? f : m_far);
 	m_near = (n >= 0 ? n : m_near);
+	setupProj();
 }
 
 double Camera::getFarClip() const
@@ -121,5 +139,16 @@ double Camera::getNearClip() const
 
 void Camera::render(const Solid& s) const
 {
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	// Viewing transformation
+	gluLookAt(
+		m_pos.x, m_pos.y, m_pos.z, // Camera position
+		m_dir.x, m_dir.y, m_dir.z, // Direction
+		m_up.x, m_up.y, m_up.z // Up vector
+	);
+
+	// Drawing
 	glCallList(s.getList());
 }

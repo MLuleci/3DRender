@@ -1,7 +1,7 @@
 LIBS = -lm -lGLEW -lGLU -lGL -lglut
 FLAGS = -Wall -g
 OFILE = render.out
-_OBJ = main.o vector3.o triangle.o solid.o camera.o util.o
+_OBJ = main.o vector3.o triangle.o solid.o camera.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 ODIR = obj
 CC = g++

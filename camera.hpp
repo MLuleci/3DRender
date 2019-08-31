@@ -71,6 +71,10 @@ public:
 	*/
 	void toggleProj();
 
+	/** Call to the appropriate routing to set up the projection(s).
+	*/
+	void setupProj() const;
+
 	/** Set far clipping plane.
 	 * @param f Far clipping plane
 	*/
