@@ -161,7 +161,6 @@ void Camera::render(const Solid& s) const
 
 	// Drawing
 	glCallList(s.getList());
-	// TODO: Check if drawing color is different from background
 
 	glPopMatrix();
 }

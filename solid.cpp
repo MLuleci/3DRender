@@ -194,15 +194,12 @@ GLuint Solid::getList() const
 
 double Solid::getRadius() const
 {
-	double x = std::pow(m_upper.x - m_lower.x, 2);
-	double y = std::pow(m_upper.y - m_lower.y, 2);
-	double z = std::pow(m_upper.z - m_lower.z, 2);
-	return std::sqrt(x + y + z) / 2.0;
+	return (getCenter() - m_lower).mag();
 }
 
 Vector3 Solid::getCenter() const
 {
-	return m_upper - m_lower;
+	return (m_upper + m_lower) / 2.0;
 }
 
 bool Solid::append(const Triangle& t)
