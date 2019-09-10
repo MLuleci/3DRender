@@ -14,13 +14,13 @@ Triangle::Triangle(Vector3 v0, Vector3 v1, Vector3 v2, Vector3 n)
 
 Vector3 Triangle::getVertex(size_t i) const
 {
-	if (0 <= i && i < 3) return m_vertex[i];
+	if (i < 3) return m_vertex[i];
 	return Vector3();
 }
 
 void Triangle::setVertex(size_t i, Vector3 v)
 {
-	if (0 <= i && i < 3) m_vertex[i] = v;
+	if (i < 3) m_vertex[i] = v;
 }
 
 Vector3 Triangle::getNormal() const

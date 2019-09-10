@@ -12,7 +12,7 @@ Solid::Solid()
 : m_arr(nullptr)
 , m_max(0)
 , m_len(0)
-, m_light(true)
+, m_light(false)
 , m_upper()
 , m_lower()
 , m_index(0)
@@ -42,13 +42,13 @@ Solid::Solid(const Solid& o)
 	}
 
 	if (o.m_vertex) {
-		m_vertex = new GLfloat[m_max * 9];
-		memcpy(m_vertex, o.m_vertex, sizeof(GLfloat) * m_max * 9);
+		m_vertex = new GLdouble[m_max * 9];
+		memcpy(m_vertex, o.m_vertex, sizeof(GLdouble) * m_max * 9);
 	}
 
 	if (o.m_norm) {
-		m_norm = new GLfloat[m_max * 3];
-		memcpy(m_norm, o.m_norm, sizeof(GLfloat) * m_max * 3);
+		m_norm = new GLdouble[m_max * 3];
+		memcpy(m_norm, o.m_norm, sizeof(GLdouble) * m_max * 3);
 	}
 }
 
@@ -173,8 +173,8 @@ bool Solid::readFile(std::string f)
 		is.seekg(2, is.cur);
 	}
 
-	if (warn) std::cerr << "Warning: File may be corrupt" << std::endl;
-	std::cout << "File read OK" << std::endl;
+	if (warn) std::cerr << "Warning: File may be corrupt (bad normals)" << std::endl;
+	std::cout << "File read OK (" << m_max << " polygons)" << std::endl;
 	is.close();
 
 	genDisplayList();
@@ -187,7 +187,7 @@ void Solid::toggleLight()
 	genDisplayList();
 }
 
-const GLuint Solid::getList() const
+GLuint Solid::getList() const
 {
 	return m_index;
 }
@@ -235,10 +235,6 @@ void Solid::swapEndian(T *p) const
 
 void Solid::genDisplayList()
 {
-	// Clear arrays
-	delete[] m_vertex;
-	delete[] m_norm;
-
 	// Don't create new arrays if no triangles in solid
 	if (m_max <= 0) {
 		glDeleteLists(m_index, 1);
@@ -247,7 +243,8 @@ void Solid::genDisplayList()
 	}
 
 	// Construct new vertex array
-	m_vertex = new GLfloat[m_max * 9];
+	glEnableClientState(GL_VERTEX_ARRAY);
+	m_vertex = new GLdouble[m_max * 9];
 	for (uint32_t i = 0; i < m_max; ++i) { // Each triangle
 		Triangle &t = m_arr[i];
 		for (uint32_t j = 0; j < 3; ++j) { // Each vertex
@@ -258,20 +255,22 @@ void Solid::genDisplayList()
 			m_vertex[p + 2] = v.z;
 		}
 	}
-	glVertexPointer(3, GL_FLOAT, 0, m_vertex);
+	glVertexPointer(3, GL_DOUBLE, 0, m_vertex);
 
 	// Construct new normal array
 	if (m_light) {
 		glEnableClientState(GL_NORMAL_ARRAY);
-		m_norm = new GLfloat[m_max * 3];
+		m_norm = new GLdouble[m_max * 9];
 		for (uint32_t i = 0; i < m_max; ++i) { // Each triangle
 			Vector3 v = m_arr[i].getNormal();
-			uint32_t p = i * 3;
-			m_norm[p] = v.x;
-			m_norm[p + 1] = v.y;
-			m_norm[p + 2] = v.z;
+			for (uint32_t j = 0; j < 3; ++j) { // Each vertex
+				uint32_t p = i * 9 + j * 3;
+				m_norm[p] = v.x;
+				m_norm[p + 1] = v.y;
+				m_norm[p + 2] = v.z;
+			}
 		}
-		glNormalPointer(GL_FLOAT, 0, m_norm);
+		glNormalPointer(GL_DOUBLE, 0, m_norm);
 	} else {
 		glDisableClientState(GL_NORMAL_ARRAY);
 	}
@@ -282,7 +281,15 @@ void Solid::genDisplayList()
 	// Create new list
 	m_index = glGenLists(1);
 	glNewList(m_index, GL_COMPILE);
-		glColor3f(1.f, 1.f, 1.f); // TODO: Default color is white, add option to change
-		glDrawArrays(GL_TRIANGLES, 0, m_max);
+		glColor3f(1.f, 1.f, 1.f); // TODO: Add option to change default color
+		glDrawArrays(GL_TRIANGLES, 0, m_max * 3);
 	glEndList();
+
+	// Disable & clear arrays
+	glDisableClientState(GL_VERTEX_ARRAY);
+	if (m_light) glDisableClientState(GL_NORMAL_ARRAY);
+
+	delete[] m_vertex; // OpenGL stores vertex data, we can freely delete these
+	delete[] m_norm;
+	m_vertex = m_norm  = nullptr;
 }

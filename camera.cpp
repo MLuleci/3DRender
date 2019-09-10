@@ -1,7 +1,6 @@
 #include <cmath>
 #include <GL/glew.h>
 #include <GL/glu.h>
-#include <GL/freeglut.h>
 #include "camera.hpp"
 #define PI 3.1415926535
 
@@ -32,6 +31,16 @@ void Camera::setPos(Vector3 p)
 Vector3 Camera::getPos() const
 {
 	return m_pos;
+}
+
+void Camera::setDir(Vector3 d)
+{
+	m_dir = d.norm();
+}
+
+Vector3 Camera::getDir() const
+{
+	return m_dir;
 }
 
 void Camera::setYaw(double a)
@@ -108,6 +117,8 @@ void Camera::setupProj() const
 		double w = m_ratio * h;
 		glOrtho(0, w, 0, h, m_near, m_far);
 	}
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 }
 
 void Camera::setFarClip(double f)
@@ -139,8 +150,7 @@ double Camera::getNearClip() const
 
 void Camera::render(const Solid& s) const
 {
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	glPushMatrix();
 
 	// Viewing transformation
 	gluLookAt(
@@ -151,4 +161,7 @@ void Camera::render(const Solid& s) const
 
 	// Drawing
 	glCallList(s.getList());
+	// TODO: Check if drawing color is different from background
+
+	glPopMatrix();
 }

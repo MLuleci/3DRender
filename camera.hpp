@@ -17,6 +17,16 @@ public:
 	*/
 	Vector3 getPos() const;
 
+	/** Set the camera's direction as a vector instead of angles.
+	 * @param d Direction vector, doesn't have to be normalized
+	*/
+	void setDir(Vector3);
+
+	/** Get the camera's direction.
+	 * @return Direction vector
+	*/
+	Vector3 getDir() const;
+
 	/** Set camera yaw.
 	 * @param a New angle, in radians
 	*/

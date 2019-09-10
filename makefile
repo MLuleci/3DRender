@@ -1,5 +1,5 @@
 LIBS = -lm -lGLEW -lGLU -lGL -lglut
-FLAGS = -Wall -g
+FLAGS = -Wall -Wextra -Wconversion -pedantic -g
 OFILE = render.out
 _OBJ = main.o vector3.o triangle.o solid.o camera.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))

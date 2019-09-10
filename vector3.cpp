@@ -99,26 +99,32 @@ Vector3 Vector3::norm() const
 
 double Vector3::mag() const
 {
-	return sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
+	return std::sqrt(std::pow(x, 2) + std::pow(y, 2) + std::pow(z, 2));
 }
 
 Vector3 Vector3::rotate(double x, double y, double z) const
 {
 	Vector3 v = *this;
-	double c = std::cos(x);
-	double s = std::cos(x);
+	double c;
+	double s;
 
 	// x-axis rotation
+	c = std::cos(x);
+	s = std::sin(x);
 	v.x = v.x;
 	v.y = v.y * c + v.z * -s;
 	v.z = v.y * s + v.z * c;
 
 	// y-axis rotation
+	c = std::cos(y);
+	s = std::sin(y);
 	v.x = v.x * c + v.z * s;
 	v.y = v.y;
 	v.z = v.x * -s + v.z * c;
 
 	// z-axis rotation
+	c = std::cos(z);
+	s = std::sin(z);
 	v.x = v.x * c + v.y * -s;
 	v.y = v.x * s + v.y * c;
 	v.z = v.z;

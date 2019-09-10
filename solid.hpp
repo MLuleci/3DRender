@@ -30,7 +30,7 @@ public:
 	/** Get the display list index.
 	 * @return GLuint display list index
 	*/
-	const GLuint getList() const;
+	GLuint getList() const;
 
 	/** Get the radius of a rough spehere that bounds the solid.
 	 * @return Distance between minimum and maximum points
@@ -73,8 +73,8 @@ private:
 	Vector3 m_upper;
 	Vector3 m_lower;
 	GLuint m_index;
-	GLfloat *m_vertex;
-	GLfloat *m_norm;
+	GLdouble *m_vertex;
+	GLdouble *m_norm;
 };
 
 #endif

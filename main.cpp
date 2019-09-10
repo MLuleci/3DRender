@@ -6,13 +6,6 @@
 #include <GL/freeglut.h>
 #include "solid.hpp"
 #include "camera.hpp"
-
-#if defined(_WIN32)
-	#define clear() system("cls")
-#else
-	#define clear() system("clear")
-#endif
-#define pause() std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n')
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 576
 
@@ -24,39 +17,25 @@ Solid gSolid;
 
 void display()
 {
-	// Clear buffer
+	// Clear buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Render solid
 	gCamera.render(gSolid);
+	glFlush();
 
 	// Update screen buffer
 	glutSwapBuffers();
-
-	// Re-draw TUI
-	clear();
-	printf(
-		"Click & drag to pan camera\n" \
-		"Arrow keys to move camera\n" \
-		"Roll [L]eft or [R]ight\n" \
-		"Zoom in or out [+/-]\n" \
-		"[T]oggle lighting\n" \
-		"Toggle perspective or orthographic [P]rojection\n" \
-		"[I]ncrease or [D]ecrease field of view\n"
-	);
 }
 
 void reshape(int w, int h)
 {
 	glViewport(0, 0, w, h); // Viewport transformation
-	gCamera.setupProj(); // Projection transformation
+	gCamera.setRatio(w / h);
 }
 
 void init()
 {
-	// Enable array(s)
-	glEnableClientState(GL_VERTEX_ARRAY);
-
 	// Enable attribute(s)
 	glEnable(GL_DEPTH_TEST);
 
@@ -104,13 +83,16 @@ int main(int argc, char **argv)
 	// Initialize camera
 	gCamera.setRatio(SCREEN_WIDTH / SCREEN_HEIGHT);
 	double r = gSolid.getRadius(); // Radius of sphere bounding solid
+	if (r == std::numeric_limits<double>::infinity()) r = std::numeric_limits<double>::max();
+	gCamera.setDir(gSolid.getCenter());
+	gCamera.setPos(gSolid.getCenter() + gCamera.getDir() * (2 * r));
 	double d = (gCamera.getPos() - gSolid.getCenter()).mag(); // Distance to solid's center
-	double f = 2.0 * atan2(r, d);
+	if (d == std::numeric_limits<double>::infinity()) d = std::numeric_limits<double>::max();
+	double f = 2.0 * std::atan2(r, d);
 	gCamera.setFov(180.0 * f / PI);
 	gCamera.setClipping(d + r, d - r);
 
-	std::cout << "Press ENTER to continue..." << std::endl;
-	pause();
+	// TODO: Print controls help
 
 	// Enter GLUT main loop
 	glutMainLoop();
