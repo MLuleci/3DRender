@@ -1,6 +1,7 @@
 #include <cmath>
 #include <GL/glew.h>
 #include <GL/glu.h>
+#include <GL/freeglut.h>
 #include "camera.hpp"
 #define PI 3.1415926535
 
@@ -41,6 +42,11 @@ void Camera::setDir(Vector3 d)
 Vector3 Camera::getDir() const
 {
 	return m_dir;
+}
+
+Vector3 Camera::getUp() const
+{
+	return m_up;
 }
 
 void Camera::setYaw(double a)
@@ -104,6 +110,7 @@ double Camera::getRatio() const
 void Camera::toggleProj()
 {
 	m_persp = !m_persp;
+	setupProj();
 }
 
 void Camera::setupProj() const
@@ -113,9 +120,9 @@ void Camera::setupProj() const
 	if (m_persp) {
 		gluPerspective(m_fov, m_ratio, m_near, m_far);
 	} else {
-		double h = 2.0 * m_near * std::tan(m_fov / 2.0);
-		double w = m_ratio * h;
-		glOrtho(0, w, 0, h, m_near, m_far);
+		double h = glutGet(GLUT_WINDOW_HEIGHT);
+		double w = glutGet(GLUT_WINDOW_WIDTH);
+		glOrtho(-w/2, w/2, -h/2, h/2, m_near, m_far);
 	}
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();

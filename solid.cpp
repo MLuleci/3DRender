@@ -140,8 +140,8 @@ bool Solid::readFile(std::string f)
 			}
 
 			x = *((float *) buf);
-			y = *((float *) buf + 4);
-			z = *((float *) buf + 8);
+			y = *((float *) (buf + 4));
+			z = *((float *) (buf + 8));
 
 			// Do endianness swaps if necessary
 			if (!le) {
@@ -152,6 +152,7 @@ bool Solid::readFile(std::string f)
 
 			v[i] = Vector3(x, y, z);
 
+			// Update upper & lower bounds
 			m_upper.x = (m_upper.x < x ? x : m_upper.x);
 			m_upper.y = (m_upper.y < y ? y : m_upper.y);
 			m_upper.z = (m_upper.z < z ? z : m_upper.z);

@@ -27,6 +27,11 @@ public:
 	*/
 	Vector3 getDir() const;
 
+	/** Get the camera's up vector.
+	 * @return Up vector
+	*/
+	Vector3 getUp() const;
+
 	/** Set camera yaw.
 	 * @param a New angle, in radians
 	*/
