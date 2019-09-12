@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <limits>
 #include <cmath>
 #include <cctype>
@@ -49,17 +50,11 @@ void reshape(int w, int h)
 
 void keyboard(unsigned char key, int x, int y)
 {
-	if (65 <= key && key <= 90) key = std::tolower(key);
+	if (65 <= key && key <= 90) key = static_cast<unsigned char>(std::tolower(key));
 	switch(key)
 	{
 		case '\x1b': // Escape
 			glutLeaveMainLoop();
-			break;
-		case 'e': // Roll right
-			gCamera.setRoll(-1);
-			break;
-		case 'q': // Roll left
-			gCamera.setRoll(1);
 			break;
 		case 'p': // Toggle projections
 			gCamera.toggleProj();
@@ -111,6 +106,20 @@ void init()
 
 int main(int argc, char **argv)
 {
+	// Check args & print help
+	if ((argc > 1 && !std::string(argv[1]).compare("-h")) || argc < 2) {
+		std::cout 	<< "Usage: " << argv[0] << " <filename>\n"
+					<< "File must be in `.stl` format.\n\n"
+					<< "Controls:\n"
+					<< "Left click & drag to rotate object\n"
+					<< "Scroll to zoom in/out\n"
+					<< "P to toggle perspective/orthographic\n"
+					<< "L to toggle lighting\n"
+					<< "ESC to quit\n\n"
+					<< "Use `-h` flag to see this help\n";
+		return 0;
+	}
+
 	// Initialize GLUT
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -134,48 +143,32 @@ int main(int argc, char **argv)
 	// Initialize OpenGL
 	init();
 
-	// Check args
-	if (argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " <filename>\nFile must be in `.stl` format." << std::endl;
-		return 1;
-	}
-
 	// Read STL file
 	if (!gSolid.readFile(argv[1])) return 1;
 
+	//gCamera.toggleProj();
+
 	// Initialize camera
 	gCamera.setRatio(SCREEN_WIDTH / SCREEN_HEIGHT);
+
+	// Set FoV
+	gCamera.setFov(56.f);
 
 	// Radius of sphere bounding solid
 	double r = gSolid.getRadius();
 	if (r == std::numeric_limits<double>::infinity()) r = std::numeric_limits<double>::max();
 
-	// Set direction to face solid
-	gCamera.setDir(gSolid.getCenter());
+	// Distance from camera to center of the solid @ given FoV
+	double d = r / std::tan(gCamera.getFov() * PI / 360.f);
 
-	// Set position one diameter away from solid
-	gCamera.setPos(gSolid.getCenter() + gCamera.getDir() * (2 * r));
-
-	// Distance to solid's center
-	double d = (gCamera.getPos() - gSolid.getCenter()).mag();
-	if (d == std::numeric_limits<double>::infinity()) d = std::numeric_limits<double>::max();
-
-	// Set FoV that covers the entire solid
-	double f = 2.0 * std::atan2(r, d);
-	gCamera.setFov(180.0 * f / PI);
+	// Set position to view entire solid
+	gCamera.setPos(gSolid.getCenter() - (gCamera.getDir() * d));
 
 	// Set clipping that covers the entire solid
 	gCamera.setClipping(d + r, d - r);
 
-	// Print controls help
-	std::cout 	<< "=============|CONTROLS|=============\n"
-				<< "Left click & drag to rotate object\n"
-				<< "E/Q keys to roll left/right\n"
-				<< "Scroll to zoom in/out\n"
-				<< "P to toggle perspective/orthographic\n"
-				<< "L to toggle lighting\n"
-				<< "ESC to quit\n"
-				<< "====================================\n";
+	// Setup orthographic projection values
+	gCamera.setupOrtho(2 * r, gCamera.getFov());
 
 	// Enter GLUT main loop
 	glutMainLoop();

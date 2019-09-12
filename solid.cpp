@@ -153,13 +153,15 @@ bool Solid::readFile(std::string f)
 			v[i] = Vector3(x, y, z);
 
 			// Update upper & lower bounds
-			m_upper.x = (m_upper.x < x ? x : m_upper.x);
-			m_upper.y = (m_upper.y < y ? y : m_upper.y);
-			m_upper.z = (m_upper.z < z ? z : m_upper.z);
+			if (i > 0) {
+				m_upper.x = (m_upper.x < x ? x : m_upper.x);
+				m_upper.y = (m_upper.y < y ? y : m_upper.y);
+				m_upper.z = (m_upper.z < z ? z : m_upper.z);
 
-			m_lower.x = (m_lower.x > x ? x : m_lower.x);
-			m_lower.y = (m_lower.y > y ? y : m_lower.y);
-			m_lower.z = (m_lower.z > z ? z : m_lower.z);
+				m_lower.x = (m_lower.x > x ? x : m_lower.x);
+				m_lower.y = (m_lower.y > y ? y : m_lower.y);
+				m_lower.z = (m_lower.z > z ? z : m_lower.z);
+			}
 		}
 
 		// Check if normal vector and m_max are valid
@@ -291,3 +293,4 @@ void Solid::genDisplayList()
 	delete[] m_norm;
 	m_vertex = m_norm  = nullptr;
 }
+

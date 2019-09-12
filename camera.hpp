@@ -52,16 +52,6 @@ public:
 	*/
 	double getPitch() const;
 
-	/** Set camera roll.
-	 * @param a New angle, in radians
-	*/
-	void setRoll(double);
-
-	/** Get camera roll.
-	 * @return The angle m_up makes with the y-axis
-	*/
-	double getRoll() const;
-
 	/** Set camera field of view.
 	 * @param a New angle in range [0, 180]
 	*/
@@ -116,6 +106,12 @@ public:
 	*/
 	double getNearClip() const;
 
+	/** Set size of the orthographic projection rectangle.
+	 * @param h Apparent height of the solid being viewed
+	 * @param f Initial FoV
+	*/
+	void setupOrtho(double, double);
+
 	/** Render the current scene the camera sees.
 	 * @param s The solid to be rendered
 	*/
@@ -129,6 +125,8 @@ private:
 	double m_ratio; 	// Aspect ratio
 	double m_far;		// Far clipping plane
 	double m_near;		// Near clipping plane
+	double m_ifov;		// Initial FoV
+	double m_h;			// Height of the ortho projection
 	bool m_persp;		// Projection type toggle
 };
 

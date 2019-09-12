@@ -3,6 +3,7 @@
 #include <GL/glu.h>
 #include <GL/freeglut.h>
 #include "camera.hpp"
+#include <iostream>
 #define PI 3.1415926535
 
 /**
@@ -11,6 +12,7 @@
  * Up vector points at positive y-axis
  * FoV & ratio are 0, need to be initialized
  * Far & near clips are 1 & 0, need to be initialized
+ * Initial FoV & height of ortho rectangle are 0, need to be initialized
  * Initial projection is perspective
 */
 Camera::Camera()
@@ -21,6 +23,8 @@ Camera::Camera()
 , m_ratio(0)
 , m_far(1)
 , m_near(0)
+, m_ifov(0)
+, m_h(0)
 , m_persp(true)
 {}
 
@@ -70,19 +74,6 @@ double Camera::getPitch() const
 	return (PI / 2.0) - m_dir.angle(y);
 }
 
-void Camera::setRoll(double a)
-{
-	double c = std::cos(a);
-	double s = std::sin(a);
-	m_up = m_up * c + (m_dir.cross(m_up)) * s + m_dir * (m_dir.dot(m_up)) * (1.0 - c);
-}
-
-double Camera::getRoll() const
-{
-	Vector3 y(0, 1, 0);
-	return m_up.angle(y);
-}
-
 void Camera::setFov(double a)
 {
 	if (0.0 <= a && a <= 180.0) {
@@ -120,9 +111,10 @@ void Camera::setupProj() const
 	if (m_persp) {
 		gluPerspective(m_fov, m_ratio, m_near, m_far);
 	} else {
-		double h = glutGet(GLUT_WINDOW_HEIGHT);
-		double w = glutGet(GLUT_WINDOW_WIDTH);
-		glOrtho(-w/2, w/2, -h/2, h/2, m_near, m_far);
+		double a = m_fov / m_ifov;
+		double h = (m_h * a) / 2.f;
+		double w = h * m_ratio;
+		glOrtho(-w, w, -h, h, m_near, m_far);
 	}
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -153,6 +145,12 @@ double Camera::getFarClip() const
 double Camera::getNearClip() const
 {
 	return m_near;
+}
+
+void Camera::setupOrtho(double h, double f)
+{
+	m_ifov = (0 <= f && f <= 180 ? f : m_ifov);
+	m_h = (h >= 0 ? h : m_h);
 }
 
 void Camera::render(const Solid& s) const
