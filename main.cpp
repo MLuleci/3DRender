@@ -7,9 +7,10 @@
 #include <GL/freeglut.h>
 #include "solid.hpp"
 #include "camera.hpp"
-#define SCREEN_WIDTH 1024
-#define SCREEN_HEIGHT 576
+#define SCREEN_WIDTH 1024.0
+#define SCREEN_HEIGHT 576.0
 #define PI 3.1415926535
+#define rad(x) (x * PI / 180.f)
 
 // Create global camera & solid
 Camera gCamera;
@@ -89,9 +90,17 @@ void mouse(int btn, int state, int x, int y)
 
 void move(int x, int y)
 {
-	gX = x - gX;
-	gY = y - gY;
-	// TODO: Rotate solid using gX & gY
+	// Get mouse delta
+	double dx = rad(static_cast<double>(x - gX));
+	double dy = -rad(static_cast<double>(y - gY));
+
+	gCamera.rotateSolid(dx, dy);
+
+	// Update mouse position
+	gX = x;
+	gY = y;
+
+	glutPostRedisplay();
 }
 
 void init()
@@ -152,23 +161,24 @@ int main(int argc, char **argv)
 	gCamera.setRatio(SCREEN_WIDTH / SCREEN_HEIGHT);
 
 	// Set FoV
-	gCamera.setFov(56.f);
+	gCamera.setFov(45.f);
 
 	// Radius of sphere bounding solid
 	double r = gSolid.getRadius();
 	if (r == std::numeric_limits<double>::infinity()) r = std::numeric_limits<double>::max();
 
 	// Distance from camera to center of the solid @ given FoV
-	double d = r / std::tan(gCamera.getFov() * PI / 360.f);
+	double d = r / std::tan(rad(gCamera.getFov()) / 2.f);
 
 	// Set position to view entire solid
-	gCamera.setPos(gSolid.getCenter() - (gCamera.getDir() * d));
+	gCamera.setPos(gCamera.getDir() * d);
 
 	// Set clipping that covers the entire solid
-	gCamera.setClipping(d + r, d - r);
+	double dia = 2 * r;
+	gCamera.setClipping(d + dia, d - dia);
 
 	// Setup orthographic projection values
-	gCamera.setupOrtho(2 * r, gCamera.getFov());
+	gCamera.setupOrtho(dia, gCamera.getFov());
 
 	// Enter GLUT main loop
 	glutMainLoop();

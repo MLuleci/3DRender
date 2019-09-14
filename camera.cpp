@@ -3,8 +3,8 @@
 #include <GL/glu.h>
 #include <GL/freeglut.h>
 #include "camera.hpp"
-#include <iostream>
 #define PI 3.1415926535
+#define deg(x) (x * 180.f / PI)
 
 /**
  * Position at origin
@@ -153,6 +153,12 @@ void Camera::setupOrtho(double h, double f)
 	m_h = (h >= 0 ? h : m_h);
 }
 
+void Camera::rotateSolid(double x, double y)
+{
+	m_rotx = std::fmod(m_rotx + x, 2.f * PI);
+	m_roty = std::fmod(m_roty + y, 2.f * PI);
+}
+
 void Camera::render(const Solid& s) const
 {
 	glPushMatrix();
@@ -160,9 +166,19 @@ void Camera::render(const Solid& s) const
 	// Viewing transformation
 	gluLookAt(
 		m_pos.x, m_pos.y, m_pos.z, // Camera position
-		m_dir.x, m_dir.y, m_dir.z, // Direction
+		0, 0, 0, // Direction
 		m_up.x, m_up.y, m_up.z // Up vector
 	);
+
+	// Model transformations
+	Vector3 c = s.getCenter();
+	Vector3 kx = Vector3(0, 1, 0);
+	Vector3 ky = m_dir.cross(m_up).norm();
+	ky = ky * std::cos(m_rotx) + kx.cross(ky) * std::sin(m_rotx) + kx * kx.dot(ky) * (1.f - std::cos(m_rotx));
+
+	glRotated(deg(m_rotx), kx.x, kx.y, kx.z);
+	glRotated(deg(m_roty), ky.x, ky.y, ky.z);
+	glTranslated(-c.x, -c.y, -c.z);
 
 	// Drawing
 	glCallList(s.getList());

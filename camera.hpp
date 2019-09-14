@@ -112,6 +112,12 @@ public:
 	*/
 	void setupOrtho(double, double);
 
+	/** Rotate the solid being viewed, in radians
+	 * @param x
+	 * @param y
+	*/
+	void rotateSolid(double, double);
+
 	/** Render the current scene the camera sees.
 	 * @param s The solid to be rendered
 	*/
@@ -126,8 +132,10 @@ private:
 	double m_far;		// Far clipping plane
 	double m_near;		// Near clipping plane
 	double m_ifov;		// Initial FoV
-	double m_h;			// Height of the ortho projection
+	double m_h;		// Height of the ortho projection
 	bool m_persp;		// Projection type toggle
+	double m_rotx;		// Rotation angle x
+	double m_roty;		// Rotation angle y
 };
 
 #endif
