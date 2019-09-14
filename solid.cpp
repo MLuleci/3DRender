@@ -187,6 +187,8 @@ bool Solid::readFile(std::string f)
 void Solid::toggleLight()
 {
 	m_light = !m_light;
+	if (m_light) glEnable(GL_LIGHTING);
+	else glDisable(GL_LIGHTING);
 	genDisplayList();
 }
 

@@ -107,10 +107,11 @@ void init()
 {
 	// Enable attribute(s)
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHT0);
 
 	glClearColor(0.f, 0.f, 0.f, 0.f);
 	// glClearDepth is set to default, i.e. farthest from the camera
-	glShadeModel(GL_FLAT);
+	glShadeModel(GL_FLAT); // Use flat shading since solid(s) have no color
 }
 
 int main(int argc, char **argv)
@@ -154,8 +155,6 @@ int main(int argc, char **argv)
 
 	// Read STL file
 	if (!gSolid.readFile(argv[1])) return 1;
-
-	//gCamera.toggleProj();
 
 	// Initialize camera
 	gCamera.setRatio(SCREEN_WIDTH / SCREEN_HEIGHT);

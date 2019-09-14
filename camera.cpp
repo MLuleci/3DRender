@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 #include <GL/glew.h>
 #include <GL/glu.h>
 #include <GL/freeglut.h>
@@ -163,6 +164,10 @@ void Camera::render(const Solid& s) const
 {
 	glPushMatrix();
 
+	// Position lights
+	GLfloat pos[] = { 0, 0, 1, 0 };
+	glLightfv (GL_LIGHT0, GL_POSITION, pos);
+
 	// Viewing transformation
 	gluLookAt(
 		m_pos.x, m_pos.y, m_pos.z, // Camera position
@@ -173,12 +178,13 @@ void Camera::render(const Solid& s) const
 	// Model transformations
 	Vector3 c = s.getCenter();
 	Vector3 kx = Vector3(0, 1, 0);
-	Vector3 ky = m_dir.cross(m_up).norm();
-	ky = ky * std::cos(m_rotx) + kx.cross(ky) * std::sin(m_rotx) + kx * kx.dot(ky) * (1.f - std::cos(m_rotx));
+	Vector3 ky = m_dir.cross(m_up).rotate(0, m_rotx, 0).norm();
 
 	glRotated(deg(m_rotx), kx.x, kx.y, kx.z);
 	glRotated(deg(m_roty), ky.x, ky.y, ky.z);
 	glTranslated(-c.x, -c.y, -c.z);
+
+	std::cout << deg(m_rotx) << " - " << ky.x << ", " << ky.y << ", " << ky.z << std::endl;
 
 	// Drawing
 	glCallList(s.getList());
