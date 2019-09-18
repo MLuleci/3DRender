@@ -33,7 +33,7 @@ public:
 	Vector3 getUp() const;
 
 	/** Set camera yaw.
-	 * @param a New angle, in radians
+	 * @param a New angle (rad)
 	*/
 	void setYaw(double);
 
@@ -43,7 +43,7 @@ public:
 	double getYaw() const;
 
 	/** Set camera pitch.
-	 * @param a New angle, in radians
+	 * @param a New angle (rad)
 	*/
 	void setPitch(double);
 
@@ -58,7 +58,7 @@ public:
 	void setFov(double);
 
 	/** Get camera field of view.
-	 * @return FoV, in degrees
+	 * @return FoV (deg)
 	*/
 	double getFov() const;
 
@@ -112,11 +112,11 @@ public:
 	*/
 	void setupOrtho(double, double);
 
-	/** Rotate the solid being viewed, in radians
-	 * @param x
-	 * @param y
+	/** Rotate the solid being viewed using quaternions.
+	 * @param v Vector of rotation
+	 * @param w 4D component
 	*/
-	void rotateSolid(double, double);
+	void rotateSolid(Vector3, double);
 
 	/** Render the current scene the camera sees.
 	 * @param s The solid to be rendered
@@ -134,8 +134,7 @@ private:
 	double m_ifov;		// Initial FoV
 	double m_h;		// Height of the ortho projection
 	bool m_persp;		// Projection type toggle
-	double m_rotx;		// Rotation angle x
-	double m_roty;		// Rotation angle y
+	GLdouble m_rotMatrix[16]; // Rotation matrix
 };
 
 #endif

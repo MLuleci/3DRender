@@ -17,8 +17,10 @@ Camera gCamera;
 Solid gSolid;
 
 // Values used in dragging
-bool gDrag = false;
-int gX, gY;
+Vector3 gCoords;
+const GLdouble proj_mat[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+const GLdouble mw_mat[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+int vp_mat[4] = {0, 0, (int) SCREEN_WIDTH, (int) SCREEN_HEIGHT};
 
 /** Get the projection of a vector u projected onto a plane with normal n.
  * @param Vector that's being projected
@@ -28,6 +30,32 @@ int gX, gY;
 Vector3 getProjVector(Vector3 u, Vector3 n)
 {
 	return u - (n * (u.dot(n) / std::pow(n.mag(), 2)));
+}
+
+/** Return the coordinates where a ray cast from the camera that passes through
+ * a given pair screen coordinates intersects the sphere surrounding the solid.
+ * @param x
+ * @param y
+ * @return The coordinates, origin if ray doesn't intersect sphere
+*/
+Vector3 sphereCoords(int x, int y)
+{
+	Vector3 p;
+	Vector3 e = gCamera.getPos();
+	gluUnProject(x, y, e.z, mw_mat, proj_mat, vp_mat, &p.x, &p.y, &p.z);
+
+	// Find where mouse intersects solid's sphere
+	double r = gSolid.getRadius();
+	Vector3 m = p - e;
+
+	double a = m.dot(m);
+	double b = e.dot(m) * 2.f;
+	double c = e.dot(e) - std::pow(r, 2);
+	double root = std::pow(b, 2) - (4.f * a * c);
+	if (root <= 0) return Vector3(); // Ray doesn't intersect w/ sphere
+	double t = (-b - std::sqrt(root)) / (2.f * a);
+
+	return (p + (m * t)).norm();
 }
 
 void display()
@@ -46,7 +74,9 @@ void display()
 void reshape(int w, int h)
 {
 	glViewport(0, 0, w, h); // Viewport transformation
-	gCamera.setRatio((w > h ? w / h : h / w));
+	vp_mat[2] = w;
+	vp_mat[3] = h;
+	gCamera.setRatio((w > h ? (double)w / (double)h : (double)h / (double)w));
 }
 
 void keyboard(unsigned char key, int x, int y)
@@ -73,34 +103,33 @@ void mouse(int btn, int state, int x, int y)
 		switch(btn)
 		{
 			case GLUT_LEFT_BUTTON: // Start dragging
-				gX = x;
-				gY = y;
-				gDrag = true;
+				gCoords = sphereCoords(vp_mat[2] - x, vp_mat[3] - y);
 				break;
 			case 3: // Zoom in/out
 			case 4:
 				gCamera.setFov(gCamera.getFov() + (btn == 3 ? -1 : 1));
 				break;
 		}
-	} else if (btn == GLUT_LEFT_BUTTON) {
-		gDrag = false; // Stop dragging
 	}
 	glutPostRedisplay();
 }
 
 void move(int x, int y)
 {
-	// Get mouse delta
-	double dx = rad(static_cast<double>(x - gX));
-	double dy = -rad(static_cast<double>(y - gY));
+	// Get new position
+	Vector3 v = sphereCoords(vp_mat[2] - x, vp_mat[3] - y);
 
-	gCamera.rotateSolid(dx, dy);
+	// Apply rotation only if sphere intersects & and coordinates have changed
+	if (v != gCoords && v != Vector3()) {
+		double a = gCoords.angle(v);
+		double w = std::cos(a / 2.f);
+		Vector3 n = gCoords.cross(v).norm() * std::sin(a / 2.f);
+		gCamera.rotateSolid(n, w);
 
-	// Update mouse position
-	gX = x;
-	gY = y;
-
-	glutPostRedisplay();
+		// Update position
+		gCoords = v;
+		glutPostRedisplay();
+	}
 }
 
 void init()

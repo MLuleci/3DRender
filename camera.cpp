@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <GL/glew.h>
 #include <GL/glu.h>
@@ -7,15 +8,6 @@
 #define PI 3.1415926535
 #define deg(x) (x * 180.f / PI)
 
-/**
- * Position at origin
- * Direction points at negative z-axis
- * Up vector points at positive y-axis
- * FoV & ratio are 0, need to be initialized
- * Far & near clips are 1 & 0, need to be initialized
- * Initial FoV & height of ortho rectangle are 0, need to be initialized
- * Initial projection is perspective
-*/
 Camera::Camera()
 : m_pos()
 , m_dir(0, 0, -1)
@@ -27,7 +19,14 @@ Camera::Camera()
 , m_ifov(0)
 , m_h(0)
 , m_persp(true)
-{}
+{
+	GLdouble *q = m_rotMatrix;
+	memset(q, 0.0, sizeof(GLdouble) * 16);
+	q[0] = 1;
+	q[5] = 1;
+	q[10] = 1;
+	q[15] = 1;
+}
 
 void Camera::setPos(Vector3 p)
 {
@@ -154,10 +153,42 @@ void Camera::setupOrtho(double h, double f)
 	m_h = (h >= 0 ? h : m_h);
 }
 
-void Camera::rotateSolid(double x, double y)
+void Camera::rotateSolid(Vector3 v, double w)
 {
-	m_rotx = std::fmod(m_rotx + x, 2.f * PI);
-	m_roty = std::fmod(m_roty + y, 2.f * PI);
+	Vector3 v2 = Vector3(v.x * v.x, v.y * v.y, v.z * v.z);
+	double xy = v.x * v.y;
+	double xz = v.x * v.z;
+	double yz = v.y * v.z;
+	double wx = w * v.x;
+	double wy = w * v.y;
+	double wz = w * v.z;
+
+	// Convert quaternion to rotation matrix
+	GLdouble q[16];
+	memset(q, 0.0, sizeof(GLdouble) * 16);
+	q[0] = 1 - 2 * v2.y - 2 * v2.z;
+	q[1] = 2 * xy + 2 * wz;
+	q[2] = 2 * xz - 2 * wy;
+
+	q[4] = 2 * xy - 2 * wz;
+	q[5] = 1 - 2 * v2.x - 2 * v2.z;
+	q[6] = 2 * yz + 2 * wx;
+
+	q[8] = 2 * xz + 2 * wy;
+	q[9] = 2 * yz - 2 * wx;
+	q[10] = 1 - 2 * v2.x - 2 * v2.y;
+
+	// Multiply previous and new matrices
+	GLdouble *l = m_rotMatrix;
+	l[0] = l[0] * q[0] + l[1] * q[4] + l[2] * q[8];
+	l[1] = l[0] * q[1] + l[1] * q[5] + l[2] * q[9];
+	l[2] = l[0] * q[2] + l[1] * q[6] + l[2] * q[10];
+	l[4] = l[4] * q[0] + l[5] * q[4] + l[6] * q[8];
+	l[5] = l[4] * q[1] + l[5] * q[5] + l[6] * q[9];
+	l[6] = l[4] * q[2] + l[5] * q[6] + l[6] * q[10];
+	l[8] = l[8] * q[0] + l[9] * q[4] + l[10] * q[8];
+	l[9] = l[8] * q[1] + l[9] * q[5] + l[10] * q[9];
+	l[10] = l[8] * q[2] + l[9] * q[6] + l[10] * q[10];
 }
 
 void Camera::render(const Solid& s) const
@@ -166,7 +197,7 @@ void Camera::render(const Solid& s) const
 
 	// Position lights
 	GLfloat pos[] = { 0, 0, 1, 0 };
-	glLightfv (GL_LIGHT0, GL_POSITION, pos);
+	glLightfv(GL_LIGHT0, GL_POSITION, pos);
 
 	// Viewing transformation
 	gluLookAt(
@@ -177,14 +208,8 @@ void Camera::render(const Solid& s) const
 
 	// Model transformations
 	Vector3 c = s.getCenter();
-	Vector3 kx = Vector3(0, 1, 0);
-	Vector3 ky = m_dir.cross(m_up).rotate(0, m_rotx, 0).norm();
-
-	glRotated(deg(m_rotx), kx.x, kx.y, kx.z);
-	glRotated(deg(m_roty), ky.x, ky.y, ky.z);
+	glMultMatrixd(m_rotMatrix);
 	glTranslated(-c.x, -c.y, -c.z);
-
-	std::cout << deg(m_rotx) << " - " << ky.x << ", " << ky.y << ", " << ky.z << std::endl;
 
 	// Drawing
 	glCallList(s.getList());
