@@ -18,9 +18,9 @@ Solid gSolid;
 
 // Values used in dragging
 Vector3 gCoords;
-const GLdouble proj_mat[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
-const GLdouble mw_mat[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
-int vp_mat[4] = {0, 0, (int) SCREEN_WIDTH, (int) SCREEN_HEIGHT};
+GLdouble projection_matrix[16];
+const GLdouble modelview_matrix[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+int viewport_matrix[4] = {0, 0, (int) SCREEN_WIDTH, (int) SCREEN_HEIGHT};
 
 /** Get the projection of a vector u projected onto a plane with normal n.
  * @param Vector that's being projected
@@ -40,12 +40,20 @@ Vector3 getProjVector(Vector3 u, Vector3 n)
 */
 Vector3 sphereCoords(int x, int y)
 {
+	// Get updated matrices
+	glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
+
+	// Get mouse position in world
 	Vector3 p;
 	Vector3 e = gCamera.getPos();
-	gluUnProject(x, y, e.z, mw_mat, proj_mat, vp_mat, &p.x, &p.y, &p.z);
+	gluUnProject(
+		x, y, e.z,
+		modelview_matrix, projection_matrix, viewport_matrix,
+		&p.x, &p.y, &p.z
+	);
 
 	// Find where mouse intersects solid's sphere
-	double r = gSolid.getRadius();
+	double r = std::pow(gSolid.getRadius(), 2);
 	Vector3 m = p - e;
 
 	double a = m.dot(m);
@@ -74,8 +82,8 @@ void display()
 void reshape(int w, int h)
 {
 	glViewport(0, 0, w, h); // Viewport transformation
-	vp_mat[2] = w;
-	vp_mat[3] = h;
+	viewport_matrix[2] = w;
+	viewport_matrix[3] = h;
 	gCamera.setRatio((w > h ? (double)w / (double)h : (double)h / (double)w));
 }
 
@@ -103,7 +111,7 @@ void mouse(int btn, int state, int x, int y)
 		switch(btn)
 		{
 			case GLUT_LEFT_BUTTON: // Start dragging
-				gCoords = sphereCoords(vp_mat[2] - x, vp_mat[3] - y);
+				gCoords = sphereCoords(x, viewport_matrix[3] - y);
 				break;
 			case 3: // Zoom in/out
 			case 4:
@@ -117,7 +125,7 @@ void mouse(int btn, int state, int x, int y)
 void move(int x, int y)
 {
 	// Get new position
-	Vector3 v = sphereCoords(vp_mat[2] - x, vp_mat[3] - y);
+	Vector3 v = sphereCoords(x, viewport_matrix[3] - y);
 
 	// Apply rotation only if sphere intersects & and coordinates have changed
 	if (v != gCoords && v != Vector3()) {

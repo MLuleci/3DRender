@@ -116,6 +116,14 @@ void Camera::setupProj() const
 		double w = h * m_ratio;
 		glOrtho(-w, w, -h, h, m_near, m_far);
 	}
+
+	// Viewing transformation
+	gluLookAt(
+		m_pos.x, m_pos.y, m_pos.z, // Camera position
+		0, 0, 0, // Direction
+		m_up.x, m_up.y, m_up.z // Up vector
+	);
+
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
@@ -165,7 +173,7 @@ void Camera::rotateSolid(Vector3 v, double w)
 
 	// Convert quaternion to rotation matrix
 	GLdouble q[16];
-	memset(q, 0.0, sizeof(GLdouble) * 16);
+	memset(q, 0.0, 16 * sizeof(GLdouble));
 	q[0] = 1 - 2 * v2.y - 2 * v2.z;
 	q[1] = 2 * xy + 2 * wz;
 	q[2] = 2 * xz - 2 * wy;
@@ -179,16 +187,18 @@ void Camera::rotateSolid(Vector3 v, double w)
 	q[10] = 1 - 2 * v2.x - 2 * v2.y;
 
 	// Multiply previous and new matrices
-	GLdouble *l = m_rotMatrix;
-	l[0] = l[0] * q[0] + l[1] * q[4] + l[2] * q[8];
-	l[1] = l[0] * q[1] + l[1] * q[5] + l[2] * q[9];
-	l[2] = l[0] * q[2] + l[1] * q[6] + l[2] * q[10];
-	l[4] = l[4] * q[0] + l[5] * q[4] + l[6] * q[8];
-	l[5] = l[4] * q[1] + l[5] * q[5] + l[6] * q[9];
-	l[6] = l[4] * q[2] + l[5] * q[6] + l[6] * q[10];
-	l[8] = l[8] * q[0] + l[9] * q[4] + l[10] * q[8];
-	l[9] = l[8] * q[1] + l[9] * q[5] + l[10] * q[9];
-	l[10] = l[8] * q[2] + l[9] * q[6] + l[10] * q[10];
+	GLdouble l[16];
+	GLdouble *dest = m_rotMatrix;
+	memcpy(l, dest, 16 * sizeof(GLdouble));
+	dest[0] = l[0] * q[0] + l[1] * q[4] + l[2] * q[8];
+	dest[1] = l[0] * q[1] + l[1] * q[5] + l[2] * q[9];
+	dest[2] = l[0] * q[2] + l[1] * q[6] + l[2] * q[10];
+	dest[4] = l[4] * q[0] + l[5] * q[4] + l[6] * q[8];
+	dest[5] = l[4] * q[1] + l[5] * q[5] + l[6] * q[9];
+	dest[6] = l[4] * q[2] + l[5] * q[6] + l[6] * q[10];
+	dest[8] = l[8] * q[0] + l[9] * q[4] + l[10] * q[8];
+	dest[9] = l[8] * q[1] + l[9] * q[5] + l[10] * q[9];
+	dest[10] = l[8] * q[2] + l[9] * q[6] + l[10] * q[10];
 }
 
 void Camera::render(const Solid& s) const
@@ -196,15 +206,8 @@ void Camera::render(const Solid& s) const
 	glPushMatrix();
 
 	// Position lights
-	GLfloat pos[] = { 0, 0, 1, 0 };
+	GLfloat pos[] = { 0, 0, -1, 0 };
 	glLightfv(GL_LIGHT0, GL_POSITION, pos);
-
-	// Viewing transformation
-	gluLookAt(
-		m_pos.x, m_pos.y, m_pos.z, // Camera position
-		0, 0, 0, // Direction
-		m_up.x, m_up.y, m_up.z // Up vector
-	);
 
 	// Model transformations
 	Vector3 c = s.getCenter();
