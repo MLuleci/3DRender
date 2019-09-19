@@ -7,6 +7,7 @@
 #include "camera.hpp"
 #define PI 3.1415926535
 #define deg(x) (x * 180.f / PI)
+#define rad(x) (x * PI / 180.f)
 
 Camera::Camera()
 : m_pos()
@@ -16,16 +17,13 @@ Camera::Camera()
 , m_ratio(0)
 , m_far(1)
 , m_near(0)
-, m_ifov(0)
-, m_h(0)
 , m_persp(true)
 {
-	GLdouble *q = m_rotMatrix;
-	memset(q, 0.0, sizeof(GLdouble) * 16);
-	q[0] = 1;
-	q[5] = 1;
-	q[10] = 1;
-	q[15] = 1;
+	memset(m_mat, 0.0, sizeof(GLdouble) * 16);
+	m_mat[0] = 1;
+	m_mat[5] = 1;
+	m_mat[10] = 1;
+	m_mat[15] = 1;
 }
 
 void Camera::setPos(Vector3 p)
@@ -111,8 +109,7 @@ void Camera::setupProj() const
 	if (m_persp) {
 		gluPerspective(m_fov, m_ratio, m_near, m_far);
 	} else {
-		double a = m_fov / m_ifov;
-		double h = (m_h * a) / 2.f;
+		double h = std::tan(rad(m_fov) / 2.f) * -m_pos.z;
 		double w = h * m_ratio;
 		glOrtho(-w, w, -h, h, m_near, m_far);
 	}
@@ -155,12 +152,6 @@ double Camera::getNearClip() const
 	return m_near;
 }
 
-void Camera::setupOrtho(double h, double f)
-{
-	m_ifov = (0 <= f && f <= 180 ? f : m_ifov);
-	m_h = (h >= 0 ? h : m_h);
-}
-
 void Camera::rotateSolid(Vector3 v, double w)
 {
 	Vector3 v2 = Vector3(v.x * v.x, v.y * v.y, v.z * v.z);
@@ -188,17 +179,16 @@ void Camera::rotateSolid(Vector3 v, double w)
 
 	// Multiply previous and new matrices
 	GLdouble l[16];
-	GLdouble *dest = m_rotMatrix;
-	memcpy(l, dest, 16 * sizeof(GLdouble));
-	dest[0] = l[0] * q[0] + l[1] * q[4] + l[2] * q[8];
-	dest[1] = l[0] * q[1] + l[1] * q[5] + l[2] * q[9];
-	dest[2] = l[0] * q[2] + l[1] * q[6] + l[2] * q[10];
-	dest[4] = l[4] * q[0] + l[5] * q[4] + l[6] * q[8];
-	dest[5] = l[4] * q[1] + l[5] * q[5] + l[6] * q[9];
-	dest[6] = l[4] * q[2] + l[5] * q[6] + l[6] * q[10];
-	dest[8] = l[8] * q[0] + l[9] * q[4] + l[10] * q[8];
-	dest[9] = l[8] * q[1] + l[9] * q[5] + l[10] * q[9];
-	dest[10] = l[8] * q[2] + l[9] * q[6] + l[10] * q[10];
+	memcpy(l, m_mat, 16 * sizeof(GLdouble));
+	m_mat[0] = l[0] * q[0] + l[1] * q[4] + l[2] * q[8];
+	m_mat[1] = l[0] * q[1] + l[1] * q[5] + l[2] * q[9];
+	m_mat[2] = l[0] * q[2] + l[1] * q[6] + l[2] * q[10];
+	m_mat[4] = l[4] * q[0] + l[5] * q[4] + l[6] * q[8];
+	m_mat[5] = l[4] * q[1] + l[5] * q[5] + l[6] * q[9];
+	m_mat[6] = l[4] * q[2] + l[5] * q[6] + l[6] * q[10];
+	m_mat[8] = l[8] * q[0] + l[9] * q[4] + l[10] * q[8];
+	m_mat[9] = l[8] * q[1] + l[9] * q[5] + l[10] * q[9];
+	m_mat[10] = l[8] * q[2] + l[9] * q[6] + l[10] * q[10];
 }
 
 void Camera::render(const Solid& s) const
@@ -211,7 +201,7 @@ void Camera::render(const Solid& s) const
 
 	// Model transformations
 	Vector3 c = s.getCenter();
-	glMultMatrixd(m_rotMatrix);
+	glMultMatrixd(m_mat);
 	glTranslated(-c.x, -c.y, -c.z);
 
 	// Drawing

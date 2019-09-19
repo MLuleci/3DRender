@@ -22,16 +22,6 @@ GLdouble projection_matrix[16];
 const GLdouble modelview_matrix[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
 int viewport_matrix[4] = {0, 0, (int) SCREEN_WIDTH, (int) SCREEN_HEIGHT};
 
-/** Get the projection of a vector u projected onto a plane with normal n.
- * @param Vector that's being projected
- * @param Normal vector that defines the plane
- * @return Projected vector, i.e. u minus the orthogonal component to the plane
-*/
-Vector3 getProjVector(Vector3 u, Vector3 n)
-{
-	return u - (n * (u.dot(n) / std::pow(n.mag(), 2)));
-}
-
 /** Return the coordinates where a ray cast from the camera that passes through
  * a given pair screen coordinates intersects the sphere surrounding the solid.
  * @param x
@@ -111,7 +101,7 @@ void mouse(int btn, int state, int x, int y)
 		switch(btn)
 		{
 			case GLUT_LEFT_BUTTON: // Start dragging
-				gCoords = sphereCoords(x, viewport_matrix[3] - y);
+				gCoords = sphereCoords(viewport_matrix[2] - x, y);
 				break;
 			case 3: // Zoom in/out
 			case 4:
@@ -125,7 +115,7 @@ void mouse(int btn, int state, int x, int y)
 void move(int x, int y)
 {
 	// Get new position
-	Vector3 v = sphereCoords(x, viewport_matrix[3] - y);
+	Vector3 v = sphereCoords(viewport_matrix[2] - x, y);
 
 	// Apply rotation only if sphere intersects & and coordinates have changed
 	if (v != gCoords && v != Vector3()) {
@@ -212,9 +202,6 @@ int main(int argc, char **argv)
 	// Set clipping that covers the entire solid
 	double dia = 2 * r;
 	gCamera.setClipping(d + dia, d - dia);
-
-	// Setup orthographic projection values
-	gCamera.setupOrtho(dia, gCamera.getFov());
 
 	// Enter GLUT main loop
 	glutMainLoop();

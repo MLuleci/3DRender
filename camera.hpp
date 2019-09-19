@@ -106,12 +106,6 @@ public:
 	*/
 	double getNearClip() const;
 
-	/** Set size of the orthographic projection rectangle.
-	 * @param h Apparent height of the solid being viewed
-	 * @param f Initial FoV
-	*/
-	void setupOrtho(double, double);
-
 	/** Rotate the solid being viewed using quaternions.
 	 * @param v Vector of rotation
 	 * @param w 4D component
@@ -131,10 +125,8 @@ private:
 	double m_ratio; 	// Aspect ratio
 	double m_far;		// Far clipping plane
 	double m_near;		// Near clipping plane
-	double m_ifov;		// Initial FoV
-	double m_h;		// Height of the ortho projection
 	bool m_persp;		// Projection type toggle
-	GLdouble m_rotMatrix[16]; // Rotation matrix
+	GLdouble m_mat[16]; // Rotation matrix
 };
 
 #endif
